@@ -1,0 +1,59 @@
+<%
+begin 
+	category_name=""
+	category_url="" 
+	categories_breadcrumb(@topic_view.topic).each_with_index do |c,i|
+		category_url = c[:url]
+		category_name = c[:name] 
+	end
+
+	@topic_view.posts.each do |post| 
+	  if (post.post_number > 1)
+%>
+		<a href='/t/<%= @topic_view.topic.slug %>/<%= @topic_view.topic.id %>' title ='<%= @topic_view.title %>'><strong><%= @topic_view.title %></strong></a> is asked under 
+
+		<%= link_to category_url do %>
+        	<%= category_name %>
+	  <% end %>
+&nbsp; which is answered by  - <%= post.user.username %>
+
+<% 
+	break
+	end
+	end 
+%>
+
+
+<% if (category_name != "") %>
+	<h3>Latest questions in <%= category_name %></h3>
+    <% url = request.protocol + request.host + category_url + '/l/latest.json'
+	resp = Net::HTTP.get_response(URI.parse(url)) # get_response takes an URI object
+	data = ::JSON.parse(resp.body)
+    %>
+<% else %>
+	<h3>Latest questions</h3>
+    <% url = request.protocol + request.host + '/latest.json'
+	resp = Net::HTTP.get_response(URI.parse(url)) # get_response takes an URI object
+	data = ::JSON.parse(resp.body)
+   end
+    %>
+	<ul>
+<% 	itopic_cnt=0 
+	data["topic_list"]["topics"].each do |child|
+	if (itopic_cnt > 4)
+	break
+	end
+	if (@topic_view.title != child["title"] && child["title"] != "About the " + category_name + " category") 
+%>
+	<li><a href='/t/<%= child["slug"] %>/<%= child["id"] %>' title='<%= child["title"] %>'><%= child["title"] %></a></li>
+	   
+	<% 
+	   itopic_cnt = itopic_cnt + 1 
+	   end 
+        %>
+	<% end %>
+	</ul>
+<%
+ rescue
+ end 
+%>
